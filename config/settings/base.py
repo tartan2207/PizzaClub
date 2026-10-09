@@ -1,6 +1,19 @@
-import sys
+from datetime import timedelta
 from pathlib import Path
+
+import environ
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+
+environ.Env.read_env(BASE_DIR / ".env.local")
+
+env = environ.Env()
+
+SECRET_KEY = env("SECRET_KEY")
+DEBUG = env.bool("DEBUG", default=False)
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS" )
+
 
 
 
@@ -14,17 +27,14 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "drf_spectacular",
-    "factory-boy",
+    # "factory-boy",
     # apps
-    "apps.accounts",
-    "apps.api",
-    "apps.catalog",
-    "apps.core",
-    "apps.delivery",
-    "apps.orders",
-    "apps.payments",
-    "apps.staff",
-    "apps.reviews",
+    'apps.orders',
+    'apps.account',
+    'apps.core',
+    'apps.dish',
+    'apps.delivery',
+    'apps.reviews',
 ]
 
 MIDDLEWARE = [
@@ -37,13 +47,31 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-
 ROOT_URLCONF = "config.urls"
-
 
 WSGI_APPLICATION = "config.wsgi.application"
 
 AUTH_USER_MODEL = "account.CustomerUser"
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
+
+DATABASES = {
+    'default': env.db('DATABASE_URL')
+}
+
 
 LANGUAGE_CODE = "uk"
 TIME_ZONE = "Europe/Kyiv"
@@ -68,30 +96,29 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 12,
  }
 
-from datetime import timedelta
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "apps.account.backends.EmailOrUsernameBackend",
+]
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+]
+
+
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME' : timedelta(minutes= 30 ),
-    'REFRESH_TOKEN_LIFETIME' : timedelta(days= 1 ),
-    'ROTATE_REFRESH_TOKENS' : True ,
-    'BLACKLIST_AFTER_ROTATION' : True ,
-    'UPDATE_LAST_LOGIN' : True ,
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
 
-
-
-
-
-
-# SPECTACULAR_SETTINGS = {
-#     "TITLE": "Hop & Barley API",
-#     "DESCRIPTION": (
-#         "REST API інтернет-магазину. Авторизація: `POST /api/users/login/` → "
-#         "кнопка **Authorize** → `access`-токен. Кошик живе в сесії, як на сайті."
-#     ),
-#     "VERSION": "1.0.0",
-#     "SERVE_INCLUDE_SCHEMA": False,
-#     "COMPONENT_SPLIT_REQUEST": True,  # separate schemas for request and response bodies
-#     "SWAGGER_UI_SETTINGS": {"persistAuthorization": True},
-#     # Order.delivery_type and User.np_delivery_type share one set of choices
-#     "ENUM_NAME_OVERRIDES": {"DeliveryTypeEnum": "apps.delivery.models.DeliveryType"},
-# }
